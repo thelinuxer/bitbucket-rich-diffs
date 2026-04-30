@@ -251,10 +251,9 @@
         commitHrefsSample: fromAnchors.commitHrefs.slice(0, 8),
         dom: dumpDomDiagnostics(),
       };
-      window.__bmdDebug = detail;
-      warn("could not resolve commits — dumping diagnostics (also at window.__bmdDebug):", detail);
+      warn("could not resolve commits — dumping diagnostics:", detail);
       throw new Error(
-        "Could not determine PR commit hashes (open devtools console for [bmd] details, then paste window.__bmdDebug)"
+        "Could not determine PR commit hashes (open devtools console for [bmd] details)"
       );
     })();
     return state.commitsPromise;

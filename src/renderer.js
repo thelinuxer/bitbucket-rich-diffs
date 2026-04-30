@@ -13,10 +13,17 @@ const BMD = (() => {
     return { text: input || "", missing: !input };
   }
 
+  const PURIFY_OPTS = {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["form", "input", "button", "select", "textarea", "style", "iframe", "object", "embed", "base", "meta", "link"],
+    FORBID_ATTR: ["formaction", "form", "target", "srcdoc"],
+    ALLOW_DATA_ATTR: false,
+  };
+
   function renderMarkdown(text) {
     configure();
     const html = marked.parse(text || "", MARKED_OPTS);
-    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    return DOMPurify.sanitize(html, PURIFY_OPTS);
   }
 
   function buildLineDiff(oldText, newText) {
