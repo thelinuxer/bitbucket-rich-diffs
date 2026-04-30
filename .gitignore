@@ -1,0 +1,16 @@
+# Firefox extension build outputs
+web-ext-artifacts/
+*.xpi
+*.zip
+
+# Node tooling (in case web-ext is added later)
+node_modules/
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
