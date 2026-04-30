@@ -36,7 +36,8 @@ jobs:
         run: |
           mkdir -p dist
           zip -r "dist/bitbucket-rich-diffs-${GITHUB_REF_NAME}.zip" \
-            manifest.json src lib icons
+            manifest.json src lib icons \
+            -x "icons/icon-source.png"
 
       - name: Submit to AMO (addons.mozilla.org)
         continue-on-error: true
@@ -47,7 +48,8 @@ jobs:
           npx --yes web-ext@8 sign \
             --source-dir=. \
             --channel=listed \
-            --artifacts-dir=dist
+            --artifacts-dir=dist \
+            --ignore-files "icons/icon-source.png" "RELEASING.md" "README.md" ".github/**"
 
       - name: Create GitHub release
         if: always()
