@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify manifest version matches tag
+        run: |
+          MANIFEST_VERSION=$(jq -r .version manifest.json)
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $MANIFEST_VERSION"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Lint extension (web-ext)
+        run: npx --yes web-ext@8 lint --source-dir=. --warnings-as-errors=false
+
+      - name: Build source zip
+        run: |
+          mkdir -p dist
+          zip -r "dist/bitbucket-rich-diffs-${GITHUB_REF_NAME}.zip" \
+            manifest.json src lib icons
+
+      - name: Submit to AMO (addons.mozilla.org)
+        continue-on-error: true
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          npx --yes web-ext@8 sign \
+            --source-dir=. \
+            --channel=listed \
+            --artifacts-dir=dist
+
+      - name: Create GitHub release
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: false
