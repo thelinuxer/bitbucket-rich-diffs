@@ -308,49 +308,67 @@
   const FILENAME_RE = /^[\w@][\w./@+-]*\.(md|markdown|mdx|mkd)$/i;
   const HUNK_HEADER_RE = /^\s*@@\s*-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s*@@/;
 
+  const SENTENCE_RE = /\b[a-z]+\s+[a-z]+\s+[a-z]+/;
+
+  function isFilenameInBodyContext(el) {
+    if (el.tagName === "A") {
+      const href = el.getAttribute("href") || "";
+      if (href && !/^(\/|https?:|mailto:|#)/i.test(href)) return true;
+    }
+    const parent = el.parentElement;
+    if (parent) {
+      const parentText = (parent.textContent || "").trim();
+      const filenameText = (el.textContent || "").trim();
+      const surrounding = parentText.split(filenameText).join(" ").trim();
+      if (SENTENCE_RE.test(surrounding)) return true;
+    }
+    return false;
+  }
+
   function findMarkdownFilenameIn(el) {
     const candidates = el.querySelectorAll(
       "button, span, a, h1, h2, h3, h4, h5, h6, [data-qa='bk-filepath'], [data-testid='filename']"
     );
     for (const c of candidates) {
       const t = (c.textContent || "").trim();
-      if (FILENAME_RE.test(t)) return c;
+      if (!FILENAME_RE.test(t)) continue;
+      if (isFilenameInBodyContext(c)) continue;
+      return c;
     }
     return null;
   }
 
-  function findFileContainers() {
-    const cards = new Set();
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  function elementContainsHunk(el) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
       const text = node.textContent || "";
-      if (text.length > 200 || !HUNK_HEADER_RE.test(text)) continue;
-      let cur = node.parentElement;
+      if (text.length < 200 && HUNK_HEADER_RE.test(text)) return true;
+    }
+    return false;
+  }
+
+  function findFileContainers() {
+    const cards = new Set();
+    const viewedNodes = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = (node.textContent || "").trim();
+      if (t === "Viewed") viewedNodes.push(node);
+    }
+
+    for (const v of viewedNodes) {
+      let cur = v.parentElement;
       while (cur && cur !== document.body) {
-        if (findMarkdownFilenameIn(cur)) {
-          let chosen = cur;
-          let parent = cur.parentElement;
-          while (parent && parent !== document.body) {
-            const filenameMatches = [];
-            const sub = parent.querySelectorAll(
-              "button, span, a, h1, h2, h3, h4, h5, h6"
-            );
-            for (const c of sub) {
-              const t = (c.textContent || "").trim();
-              if (FILENAME_RE.test(t)) filenameMatches.push(c);
-              if (filenameMatches.length > 1) break;
-            }
-            if (filenameMatches.length > 1) break;
-            chosen = parent;
-            parent = parent.parentElement;
-          }
-          cards.add(chosen);
+        if (elementContainsHunk(cur)) {
+          cards.add(cur);
           break;
         }
         cur = cur.parentElement;
       }
     }
+
     return [...cards];
   }
 
