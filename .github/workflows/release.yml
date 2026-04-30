@@ -50,6 +50,7 @@ jobs:
             --channel=listed \
             --artifacts-dir=dist \
             --amo-metadata=amo-metadata.json \
+            --approval-timeout=0 \
             --ignore-files "icons/icon-source.png" "RELEASING.md" "README.md" "amo-metadata.json" ".github/**"
 
       - name: Create GitHub release
