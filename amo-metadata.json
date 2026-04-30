@@ -1,4 +1,7 @@
 {
+  "categories": {
+    "firefox": ["web-development"]
+  },
   "version": {
     "license": "MIT"
   }
