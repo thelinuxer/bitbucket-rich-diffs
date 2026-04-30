@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bitbucket Markdown Diff Renderer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Renders Markdown files in Bitbucket Cloud pull-request diffs as unified or side-by-side rendered views.",
   "browser_specific_settings": {
     "gecko": {
