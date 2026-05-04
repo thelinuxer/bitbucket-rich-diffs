@@ -85,6 +85,44 @@ https://github.com/thelinuxer/bitbucket-rich-diffs/issues
 
 ---
 
+## Single purpose description (Privacy practices tab)
+
+```
+Render Markdown files inside Bitbucket Cloud pull-request diffs as proper formatted documents — either unified with diff highlights, or side-by-side Before/After — so reviewing prose changes doesn't require reading raw +/- lines.
+```
+
+---
+
+## Remote code use justification (Privacy practices tab)
+
+Chrome asks even if you don't use any. Paste:
+
+```
+This extension does NOT load or execute any remote code. All JavaScript is bundled in the extension package: lib/marked.min.js, lib/diff.min.js, lib/purify.min.js, src/background.js, src/content.js, src/renderer.js. The extension does not inject <script> tags into pages, does not use eval() or new Function(), and does not download or run code from external sources at runtime. The only network activity is fetching the user's own pull-request file content from bitbucket.org (same domain the user is already viewing) for local rendering.
+```
+
+When the form asks "Are you using Remote code?", the answer is **No**.
+
+---
+
+## Host permission justifications (Privacy practices tab)
+
+CWS asks for a separate justification per `host_permissions` entry.
+
+### `*://bitbucket.org/*`
+
+```
+The extension's content script runs on Bitbucket Cloud pull-request diff pages and fetches the raw before/after content of Markdown files in the diff using the user's existing browser session (same-origin). This is the only way to display rendered Markdown alongside the diff without requiring the user to re-authenticate.
+```
+
+### `*://api.bitbucket.org/*`
+
+```
+The extension reads the source and destination commit hashes of the pull request being viewed by calling Bitbucket's public REST API. This is the same data Bitbucket's own web UI fetches; the extension reuses the user's existing browser session.
+```
+
+---
+
 ## Privacy practices declaration
 
 CWS asks several specific yes/no questions:
