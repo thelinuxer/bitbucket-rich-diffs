@@ -140,21 +140,15 @@ CWS asks several specific yes/no questions:
 | User activity collected | No |
 | Website content collected | Yes — *but* only file contents the user is already viewing in a Bitbucket pull request, fetched directly to render locally. Nothing is transmitted to any third party. |
 
-### Privacy policy text
+### Privacy policy URL
 
-If CWS requires a privacy policy URL, host this text somewhere accessible (a GitHub Pages page or the README) and paste the URL:
+Paste this in the CWS "Privacy policy URL" field:
 
 ```
-Bitbucket Rich Diffs does not collect, store, transmit, or share any
-personal data. The extension makes HTTP requests only to bitbucket.org
-domains, using the user's existing browser session, to fetch the raw
-before and after content of Markdown files visible in pull requests
-the user is already viewing. No analytics, no telemetry, no third-party
-services.
-
-Source code is available at:
-https://github.com/thelinuxer/bitbucket-rich-diffs
+https://github.com/thelinuxer/bitbucket-rich-diffs/blob/main/PRIVACY.md
 ```
+
+The full policy text lives in `PRIVACY.md` in this repo. Update both `PRIVACY.md` and the date at the top whenever you change permissions or what the extension contacts.
 
 ### Permission justifications
 
