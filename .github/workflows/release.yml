@@ -16,23 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify manifest versions match tag
-        run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          for m in manifests/firefox.json manifests/chrome.json; do
-            MV=$(jq -r .version "$m")
-            if [ "$MV" != "$TAG_VERSION" ]; then
-              echo "::error::Tag $GITHUB_REF_NAME does not match version $MV in $m"
-              exit 1
-            fi
-          done
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Build per-browser packages
-        run: scripts/build.sh --zip
+        run: scripts/build.sh --version "${GITHUB_REF_NAME#v}" --zip
 
       - name: Lint Firefox build (web-ext)
         run: npx --yes web-ext@8 lint --source-dir=dist/firefox --warnings-as-errors=false

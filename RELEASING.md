@@ -32,27 +32,29 @@ The Chrome submission step is gated on `CWS_REFRESH_TOKEN` and `CWS_EXTENSION_ID
 
 ## Cutting a release
 
-1. Bump `version` in **both** `manifests/firefox.json` and `manifests/chrome.json` to the same value. The workflow refuses to run if either doesn't match the tag.
-2. Commit the bump (e.g. `release: bump to 0.1.5`).
-3. Tag and push:
+The version field in the committed manifests is a placeholder (`0.0.0`). The build script rewrites it from the git tag at build time, so there's no manifest bump to do — just tag.
+
+1. Tag and push:
    ```
-   git tag v0.1.5
-   git push origin main --tags
+   git tag v0.1.7
+   git push origin v0.1.7
    ```
-4. The workflow will:
-   - Verify both manifest versions match the tag.
-   - Run `scripts/build.sh --zip` to produce `dist/firefox`, `dist/chrome`, and `dist/bitbucket-rich-diffs-{firefox,chrome}-vX.Y.Z.zip`.
+2. The workflow will:
+   - Run `scripts/build.sh --version "${GITHUB_REF_NAME#v}" --zip` to produce `dist/firefox`, `dist/chrome`, and `dist/bitbucket-rich-diffs-{firefox,chrome}-vX.Y.Z.zip`. The manifest's `version` field is rewritten to match the tag during the build.
    - Run `web-ext lint` on `dist/firefox`.
    - Submit the Firefox build to AMO via `web-ext sign --channel=listed`.
    - If Chrome secrets are configured, upload the Chrome build to the Chrome Web Store and publish.
    - Create a GitHub release with both zips attached and auto-generated notes.
 
+Tag names must be `vX.Y.Z` (semver). The build script rejects non-semver versions.
+
 ## Local builds
 
 ```bash
-scripts/build.sh           # builds dist/firefox/ and dist/chrome/
-scripts/build.sh --zip     # plus dist/bitbucket-rich-diffs-{firefox,chrome}-vX.Y.Z.zip
-scripts/build.sh --browser firefox  # build only one
+scripts/build.sh                            # builds dist/firefox/ and dist/chrome/
+                                            # version: from current tag, else 0.0.0
+scripts/build.sh --version 0.1.7 --zip      # explicit version + per-store zips
+scripts/build.sh --browser firefox          # build only one
 ```
 
 Load the resulting directory:
