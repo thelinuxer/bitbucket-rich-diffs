@@ -1,4 +1,5 @@
-# Firefox extension build outputs
+# Build outputs
+dist/
 web-ext-artifacts/
 *.xpi
 *.zip

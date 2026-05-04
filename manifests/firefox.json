@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Bitbucket Markdown Diff Renderer",
+  "version": "0.1.5",
+  "description": "Renders Markdown files in Bitbucket Cloud pull-request diffs as unified or side-by-side rendered views.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "bitbucket-rich-diffs@thelinuxer.github.io",
+      "strict_min_version": "115.0"
+    }
+  },
+  "host_permissions": [
+    "*://bitbucket.org/*",
+    "*://api.bitbucket.org/*"
+  ],
+  "background": {
+    "scripts": ["src/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://bitbucket.org/*/pull-requests/*"],
+      "js": [
+        "lib/marked.min.js",
+        "lib/diff.min.js",
+        "lib/purify.min.js",
+        "src/renderer.js",
+        "src/content.js"
+      ],
+      "css": ["src/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  }
+}

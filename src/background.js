@@ -14,22 +14,28 @@ function isAllowedUrl(url) {
   }
 }
 
-api.runtime.onMessage.addListener((msg, sender) => {
-  if (!sender || sender.id !== api.runtime.id) return;
-  if (!msg || msg.type !== "bmd-fetch") return;
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!sender || sender.id !== api.runtime.id) return false;
+  if (!msg || msg.type !== "bmd-fetch") return false;
   if (!isAllowedUrl(msg.url)) {
-    return Promise.resolve({ ok: false, status: 0, error: "url not allowed" });
+    sendResponse({ ok: false, status: 0, error: "url not allowed" });
+    return false;
   }
-  return (async () => {
+  (async () => {
     try {
       const r = await fetch(msg.url, {
         credentials: "include",
         headers: { Accept: msg.accept || "application/json" },
       });
       const text = await r.text();
-      return { ok: r.ok, status: r.status, text };
+      sendResponse({ ok: r.ok, status: r.status, text });
     } catch (err) {
-      return { ok: false, status: 0, error: String(err && err.message ? err.message : err) };
+      sendResponse({
+        ok: false,
+        status: 0,
+        error: String(err && err.message ? err.message : err),
+      });
     }
   })();
+  return true;
 });

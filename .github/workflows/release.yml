@@ -16,42 +16,76 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify manifest version matches tag
+      - name: Verify manifest versions match tag
         run: |
-          MANIFEST_VERSION=$(jq -r .version manifest.json)
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match manifest version $MANIFEST_VERSION"
-            exit 1
-          fi
+          for m in manifests/firefox.json manifests/chrome.json; do
+            MV=$(jq -r .version "$m")
+            if [ "$MV" != "$TAG_VERSION" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match version $MV in $m"
+              exit 1
+            fi
+          done
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Lint extension (web-ext)
-        run: npx --yes web-ext@8 lint --source-dir=. --warnings-as-errors=false
+      - name: Build per-browser packages
+        run: scripts/build.sh --zip
 
-      - name: Build source zip
-        run: |
-          mkdir -p dist
-          zip -r "dist/bitbucket-rich-diffs-${GITHUB_REF_NAME}.zip" \
-            manifest.json src lib icons LICENSE \
-            -x "icons/icon-source.png"
+      - name: Lint Firefox build (web-ext)
+        run: npx --yes web-ext@8 lint --source-dir=dist/firefox --warnings-as-errors=false
 
-      - name: Submit to AMO (addons.mozilla.org)
+      - name: Submit Firefox build to AMO
         continue-on-error: true
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
           npx --yes web-ext@8 sign \
-            --source-dir=. \
+            --source-dir=dist/firefox \
             --channel=listed \
             --artifacts-dir=dist \
             --amo-metadata=amo-metadata.json \
-            --approval-timeout=0 \
-            --ignore-files "icons/icon-source.png" "RELEASING.md" "README.md" "amo-metadata.json" ".github/**"
+            --approval-timeout=0
+
+      - name: Submit Chrome build to Chrome Web Store
+        continue-on-error: true
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_PUBLISH_TARGET: ${{ vars.CWS_PUBLISH_TARGET || 'default' }}
+        run: |
+          if [ -z "$CWS_REFRESH_TOKEN" ] || [ -z "$CWS_EXTENSION_ID" ]; then
+            echo "Chrome Web Store secrets not configured (CWS_REFRESH_TOKEN / CWS_EXTENSION_ID); skipping."
+            exit 0
+          fi
+          ZIP="dist/bitbucket-rich-diffs-chrome-v${GITHUB_REF_NAME#v}.zip"
+          ACCESS_TOKEN=$(curl -fsS https://oauth2.googleapis.com/token \
+            -d "client_id=$CWS_CLIENT_ID" \
+            -d "client_secret=$CWS_CLIENT_SECRET" \
+            -d "refresh_token=$CWS_REFRESH_TOKEN" \
+            -d "grant_type=refresh_token" \
+            | jq -r .access_token)
+          if [ -z "$ACCESS_TOKEN" ] || [ "$ACCESS_TOKEN" = "null" ]; then
+            echo "::error::Failed to obtain CWS access token"
+            exit 1
+          fi
+          echo "Uploading $ZIP to Chrome Web Store..."
+          curl -fsS -X PUT \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -T "$ZIP" \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/$CWS_EXTENSION_ID"
+          echo "Publishing $CWS_EXTENSION_ID (target=$CWS_PUBLISH_TARGET)..."
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -H "Content-Length: 0" \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/$CWS_EXTENSION_ID/publish?publishTarget=$CWS_PUBLISH_TARGET"
 
       - name: Create GitHub release
         if: always()

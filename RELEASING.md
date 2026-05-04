@@ -1,47 +1,73 @@
 # Releasing
 
-A release is triggered by pushing a `v*` git tag. GitHub Actions does the rest.
+A release is triggered by pushing a `v*` git tag. GitHub Actions builds per-browser packages, submits them to the respective stores, and creates a GitHub release with the zip artifacts attached.
 
 ## Prerequisites (one-time)
 
+### AMO (Firefox)
+
 - AMO developer account at https://addons.mozilla.org/
 - API credentials generated at https://addons.mozilla.org/developers/addon/api/key/
-- The credentials added to this repo's GitHub secrets:
-  - `AMO_JWT_ISSUER` — the JWT issuer key
-  - `AMO_JWT_SECRET` — the JWT secret
+- Repo secrets:
+  - `AMO_JWT_ISSUER` — JWT issuer key
+  - `AMO_JWT_SECRET` — JWT secret
+
+### Chrome Web Store
+
+- Chrome Web Store developer account ($5 one-time fee paid at https://chrome.google.com/webstore/devconsole)
+- One **manual** publish required first to receive the extension ID — upload `dist/bitbucket-rich-diffs-chrome-vX.Y.Z.zip` (built locally via `scripts/build.sh --zip`) at https://chrome.google.com/webstore/devconsole
+- After the first manual publish, generate API credentials:
+  1. Google Cloud Console → enable the **Chrome Web Store API**
+  2. Create an OAuth 2.0 client (type: Desktop app)
+  3. Run the OAuth flow once to get a **refresh token** (e.g. via `https://github.com/fregante/chrome-webstore-upload-cli` or any of the documented one-shot scripts)
+- Repo secrets:
+  - `CWS_CLIENT_ID`
+  - `CWS_CLIENT_SECRET`
+  - `CWS_REFRESH_TOKEN`
+  - `CWS_EXTENSION_ID` — the ID Chrome assigned after the first manual upload
+- Optional repo variable (not secret):
+  - `CWS_PUBLISH_TARGET` — `default` (public) or `trustedTesters`. Default: `default`.
+
+The Chrome submission step is gated on `CWS_REFRESH_TOKEN` and `CWS_EXTENSION_ID` being set. Without them, the step prints "Chrome Web Store secrets not configured; skipping." and the rest of the workflow continues — useful while you're still doing the first manual upload.
 
 ## Cutting a release
 
-1. Bump `version` in `manifest.json` (must match the tag — the workflow refuses to run on a mismatch).
-2. Commit the bump (e.g. `release: bump to 0.1.1`).
+1. Bump `version` in **both** `manifests/firefox.json` and `manifests/chrome.json` to the same value. The workflow refuses to run if either doesn't match the tag.
+2. Commit the bump (e.g. `release: bump to 0.1.5`).
 3. Tag and push:
    ```
-   git tag v0.1.1
+   git tag v0.1.5
    git push origin main --tags
    ```
-4. The `Release` workflow will:
-   - Verify the manifest version matches the tag.
-   - Lint the extension with `web-ext lint`.
-   - Build a `bitbucket-rich-diffs-vX.Y.Z.zip` source bundle.
-   - Submit to AMO via `web-ext sign --channel=listed`.
-   - Create a GitHub release with the zip attached and auto-generated notes.
+4. The workflow will:
+   - Verify both manifest versions match the tag.
+   - Run `scripts/build.sh --zip` to produce `dist/firefox`, `dist/chrome`, and `dist/bitbucket-rich-diffs-{firefox,chrome}-vX.Y.Z.zip`.
+   - Run `web-ext lint` on `dist/firefox`.
+   - Submit the Firefox build to AMO via `web-ext sign --channel=listed`.
+   - If Chrome secrets are configured, upload the Chrome build to the Chrome Web Store and publish.
+   - Create a GitHub release with both zips attached and auto-generated notes.
 
-## First AMO submission
+## Local builds
 
-The first submission creates the addon listing on AMO with only the metadata in `manifest.json` (name, description, version). After the first run completes, log into AMO and fill in:
+```bash
+scripts/build.sh           # builds dist/firefox/ and dist/chrome/
+scripts/build.sh --zip     # plus dist/bitbucket-rich-diffs-{firefox,chrome}-vX.Y.Z.zip
+scripts/build.sh --browser firefox  # build only one
+```
 
-- A longer description
-- Screenshots
-- Categories and tags
-- Support / homepage URLs
-- License information
+Load the resulting directory:
 
-Subsequent releases reuse that listing — only the new version gets uploaded.
+- **Firefox** — `about:debugging` → **Load Temporary Add-on…** → pick `dist/firefox/manifest.json`
+- **Chrome** — `chrome://extensions/` → **Developer mode** → **Load unpacked** → pick `dist/chrome/`
 
-Listed-channel submissions are reviewed by Mozilla before going live. The CI step succeeds once the upload is accepted; actual publication happens after review.
+## First store submissions
+
+The very first listing on each store needs metadata that's not in the manifest (long description, screenshots, categories, support URLs, privacy statement). For copy you can paste, see `AMO_LISTING.md` (Firefox) and `CHROME_LISTING.md` (Chrome).
+
+Subsequent releases reuse the listing — only the new version is uploaded.
 
 ## If something fails
 
-- The **AMO submission step is `continue-on-error`**, so a failure there won't block the GitHub release. Check the Actions log for the specific reason (most common: version already submitted, or invalid credentials).
-- The **GitHub release step uses `if: always()`** so the zip artifact is published even if AMO failed.
-- To re-submit to AMO without a new git tag, bump the version and tag again — AMO won't accept the same version twice.
+- Both store-submission steps use `continue-on-error: true`, so a failure on AMO or CWS doesn't block the GitHub release.
+- The GitHub release step uses `if: always()`, so the zip artifacts are published even if both stores rejected.
+- To re-submit a version that AMO or CWS already accepted, you have to bump the manifest version and re-tag — neither store accepts duplicate version uploads.
