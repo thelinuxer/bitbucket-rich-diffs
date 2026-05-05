@@ -6,10 +6,10 @@ Works in **Firefox** and **Chrome** (and any Chromium-based browser that support
 
 ## Install
 
-[![Get the Add-on for Firefox](https://img.shields.io/badge/Firefox-Get%20the%20Add--on-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/bitbucket-markdown-diff-render/)
+[![Get the Add-on for Firefox](https://img.shields.io/badge/Firefox-Get%20the%20Add--on-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/bitbucket-rich-diffs/)
 [![Available in the Chrome Web Store](https://img.shields.io/badge/Chrome-Available%20in%20the%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](#)
 
-> **Firefox**: install from [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/bitbucket-markdown-diff-render/) — pending Mozilla review on first listing.
+> **Firefox**: install from [addons.mozilla.org](https://addons.mozilla.org/en-US/firefox/addon/bitbucket-rich-diffs/) — pending Mozilla review on first listing.
 >
 > **Chrome**: link goes live after the first Chrome Web Store publish. Edit this URL once published.
 

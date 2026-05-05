@@ -1,7 +1,7 @@
 # AMO listing copy
 
 Paste the relevant pieces into the AMO dashboard at
-https://addons.mozilla.org/en-US/developers/addon/bitbucket-markdown-diff-render/edit
+https://addons.mozilla.org/en-US/developers/addon/bitbucket-rich-diffs/edit
 
 The fields below are what AMO calls them in the dashboard.
 
@@ -13,7 +13,7 @@ The fields below are what AMO calls them in the dashboard.
 Bitbucket Rich Diffs
 ```
 
-(The current manifest still says "Bitbucket Markdown Diff Renderer" — when you bump the listing here, also bump `manifest.json` in the next release so the in-Firefox name matches.)
+(Both manifests already declare this as their `name` since v0.2.0. AMO regenerated the slug to `bitbucket-rich-diffs` automatically when the new version was uploaded.)
 
 ---
 
