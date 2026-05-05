@@ -40,6 +40,7 @@ jobs:
             --approval-timeout=0
 
       - name: Submit Chrome build to Chrome Web Store
+        if: ${{ vars.CWS_ENABLED == 'true' }}
         continue-on-error: true
         env:
           CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}

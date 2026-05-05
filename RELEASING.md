@@ -25,10 +25,11 @@ A release is triggered by pushing a `v*` git tag. GitHub Actions builds per-brow
   - `CWS_CLIENT_SECRET`
   - `CWS_REFRESH_TOKEN`
   - `CWS_EXTENSION_ID` — the ID Chrome assigned after the first manual upload
-- Optional repo variable (not secret):
+- Repo variables (not secrets):
+  - `CWS_ENABLED` — set to the literal string `true` to enable Chrome Web Store auto-publishing on tag pushes. Any other value (or missing) skips the step. **Off by default** so a tag push doesn't accidentally publish to Chrome while you iterate on the source.
   - `CWS_PUBLISH_TARGET` — `default` (public) or `trustedTesters`. Default: `default`.
 
-The Chrome submission step is gated on `CWS_REFRESH_TOKEN` and `CWS_EXTENSION_ID` being set. Without them, the step prints "Chrome Web Store secrets not configured; skipping." and the rest of the workflow continues — useful while you're still doing the first manual upload.
+The Chrome submission step has two gates: the `CWS_ENABLED` variable (the kill switch you toggle while iterating) and the `CWS_REFRESH_TOKEN` / `CWS_EXTENSION_ID` secrets being non-empty (sanity check that credentials exist). Either one missing → step skips with a log line, the rest of the workflow continues. Toggle at https://github.com/thelinuxer/bitbucket-rich-diffs/settings/variables/actions.
 
 ## Cutting a release
 
