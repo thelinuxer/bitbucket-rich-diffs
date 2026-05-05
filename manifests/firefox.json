@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Bitbucket Markdown Diff Renderer",
+  "name": "Bitbucket Rich Diffs",
   "version": "0.0.0",
-  "description": "Renders Markdown files in Bitbucket Cloud pull-request diffs as unified or side-by-side rendered views.",
+  "description": "Render Markdown and ODS files in Bitbucket Cloud pull-request diffs as readable, formatted views with diff highlights.",
   "browser_specific_settings": {
     "gecko": {
       "id": "bitbucket-rich-diffs@thelinuxer.github.io",
@@ -23,7 +23,10 @@
         "lib/marked.min.js",
         "lib/diff.min.js",
         "lib/purify.min.js",
+        "lib/jszip.min.js",
         "src/renderer.js",
+        "src/ods-parser.js",
+        "src/ods-renderer.js",
         "src/content.js"
       ],
       "css": ["src/styles.css"],

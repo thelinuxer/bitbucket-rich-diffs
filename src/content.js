@@ -2,6 +2,8 @@
 
 (() => {
   const MD_EXT = /\.(md|markdown|mdx|mkd)$/i;
+  const ODS_EXT = /\.ods$/i;
+  const SUPPORTED_EXT = new RegExp(MD_EXT.source + "|" + ODS_EXT.source, "i");
   const MODES = ["original", "unified", "sxs"];
   const MODE_LABEL = {
     original: "Original diff",
@@ -260,25 +262,43 @@
   }
 
   async function fetchRaw(hash, path) {
-    if (!hash) return { text: "", missing: true };
+    if (!hash) return { text: "", bytes: null, missing: true };
     const key = `${hash}::${path}`;
     if (state.rawCache.has(key)) return state.rawCache.get(key);
     const url = `/${state.ws}/${state.repo}/raw/${hash}/${encodeURI(path)}`;
     const r = await fetch(url, { credentials: "include" });
     if (r.status === 404) {
-      const result = { text: "", missing: true };
+      const result = { text: "", bytes: null, missing: true };
       state.rawCache.set(key, result);
       return result;
     }
     if (!r.ok) throw new Error(`raw fetch failed (${r.status}) for ${path}@${hash}`);
-    const text = await r.text();
-    const result = { text, missing: false };
+    let result;
+    if (isBinaryPath(path)) {
+      const ab = await r.arrayBuffer();
+      result = { text: "", bytes: ab, missing: false };
+    } else {
+      const text = await r.text();
+      result = { text, bytes: null, missing: false };
+    }
     state.rawCache.set(key, result);
     return result;
   }
 
   function isMarkdownPath(p) {
     return !!p && MD_EXT.test(p);
+  }
+
+  function isOdsPath(p) {
+    return !!p && ODS_EXT.test(p);
+  }
+
+  function isSupportedPath(p) {
+    return !!p && SUPPORTED_EXT.test(p);
+  }
+
+  function isBinaryPath(p) {
+    return isOdsPath(p);
   }
 
   function decodePath(s) {
@@ -305,7 +325,7 @@
     return null;
   }
 
-  const FILENAME_RE = /^[\w@][\w./@+-]*\.(md|markdown|mdx|mkd)$/i;
+  const FILENAME_RE = /^[\w@][\w./@+-]*\.(md|markdown|mdx|mkd|ods)$/i;
   const HUNK_HEADER_RE = /^\s*@@\s*-\d+(?:,\d+)?\s+\+\d+(?:,\d+)?\s*@@/;
 
   const SENTENCE_RE = /\b[a-z]+\s+[a-z]+\s+[a-z]+/;
@@ -348,6 +368,18 @@
     return false;
   }
 
+  const BINARY_NOTICE_RE = /Binary file|can'?t show you the diff|Open file'?s diff/i;
+
+  function elementContainsBinaryNotice(el) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const text = node.textContent || "";
+      if (text.length < 300 && BINARY_NOTICE_RE.test(text)) return true;
+    }
+    return false;
+  }
+
   function findFileContainers() {
     const cards = new Set();
     const viewedNodes = [];
@@ -361,7 +393,7 @@
     for (const v of viewedNodes) {
       let cur = v.parentElement;
       while (cur && cur !== document.body) {
-        if (elementContainsHunk(cur)) {
+        if (elementContainsHunk(cur) || elementContainsBinaryNotice(cur)) {
           cards.add(cur);
           break;
         }
@@ -378,14 +410,8 @@
 
     const label = document.createElement("span");
     label.className = "bmd-label";
-    label.textContent = "Markdown view:";
+    label.textContent = "Rich diff:";
     bar.appendChild(label);
-
-    const filename = document.createElement("span");
-    filename.className = "bmd-filename";
-    filename.textContent = path;
-    filename.title = path;
-    bar.appendChild(filename);
 
     const group = document.createElement("div");
     group.className = "bmd-btn-group";
@@ -438,8 +464,15 @@
     if (!ctx.view) {
       ctx.view = document.createElement("div");
       ctx.view.className = "bmd-view";
-      fileEl.appendChild(ctx.view);
+      const bodyEl = fileEl.querySelector(".bmd-body");
+      (bodyEl || fileEl).appendChild(ctx.view);
     }
+
+    ctx.view.innerHTML = "";
+    const loading = document.createElement("div");
+    loading.className = "bmd-loading";
+    loading.innerHTML = '<div class="bmd-spinner" aria-hidden="true"></div><div class="bmd-loading-label">Rendering…</div>';
+    ctx.view.appendChild(loading);
 
     setStatus(fileEl, "Loading…");
     try {
@@ -449,9 +482,18 @@
         fetchRaw(src, path),
       ]);
       ctx.view.innerHTML = "";
-      const rendered = mode === "sxs"
-        ? BMD.makeSideBySide(oldRes, newRes)
-        : BMD.makeUnifiedRendered(oldRes, newRes);
+      let rendered;
+      if (isOdsPath(path)) {
+        rendered =
+          mode === "sxs"
+            ? await BMD_ODS_RENDER.makeSideBySide(oldRes, newRes)
+            : await BMD_ODS_RENDER.makeUnified(oldRes, newRes);
+      } else {
+        rendered =
+          mode === "sxs"
+            ? BMD.makeSideBySide(oldRes, newRes)
+            : BMD.makeUnifiedRendered(oldRes, newRes);
+      }
       ctx.view.appendChild(rendered);
       setStatus(fileEl, "");
     } catch (err) {
@@ -464,15 +506,48 @@
     }
   }
 
+  function findAndMarkBody(fileEl) {
+    const tw = document.createTreeWalker(fileEl, NodeFilter.SHOW_TEXT);
+    let viewedNode = null;
+    let n;
+    while ((n = tw.nextNode())) {
+      if ((n.textContent || "").trim() === "Viewed") {
+        viewedNode = n;
+        break;
+      }
+    }
+    if (!viewedNode) return;
+
+    let bodyEl = null;
+    function visit(el) {
+      if (bodyEl) return;
+      if (el.classList && (el.classList.contains("bmd-toolbar") || el.classList.contains("bmd-view"))) return;
+      if (el.contains(viewedNode)) {
+        for (const child of el.children) visit(child);
+        return;
+      }
+      const txt = el.textContent || "";
+      if (HUNK_HEADER_RE.test(txt) || BINARY_NOTICE_RE.test(txt)) {
+        bodyEl = el;
+      }
+    }
+    visit(fileEl);
+    if (bodyEl) bodyEl.classList.add("bmd-body");
+  }
+
   function attach(fileEl) {
     if (fileEl.dataset.bmdAttached) return;
     const path = extractPath(fileEl);
-    if (!isMarkdownPath(path)) return;
+    if (!isSupportedPath(path)) return;
     fileEl.dataset.bmdAttached = "1";
     fileEl.classList.add("bmd-host");
     const bar = buildToolbar(fileEl, path);
     fileEl.insertBefore(bar, fileEl.firstChild);
+    findAndMarkBody(fileEl);
     setActiveButton(fileEl, "original");
+    if (isOdsPath(path)) {
+      setMode(fileEl, path, "unified").catch(() => {});
+    }
   }
 
   function scan() {
