@@ -40,17 +40,21 @@ jobs:
             --approval-timeout=0
 
       - name: Submit Chrome build to Chrome Web Store
-        if: ${{ vars.CWS_ENABLED == 'true' }}
         continue-on-error: true
         env:
+          CWS_ENABLED: ${{ vars.CWS_ENABLED || secrets.CWS_ENABLED }}
           CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
           CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
           CWS_PUBLISH_TARGET: ${{ vars.CWS_PUBLISH_TARGET || 'default' }}
         run: |
+          if [ "$CWS_ENABLED" != "true" ]; then
+            echo "Chrome Web Store publishing is gated. Set CWS_ENABLED=true (repo variable or secret) to enable. Skipping."
+            exit 0
+          fi
           if [ -z "$CWS_REFRESH_TOKEN" ] || [ -z "$CWS_EXTENSION_ID" ]; then
-            echo "Chrome Web Store secrets not configured (CWS_REFRESH_TOKEN / CWS_EXTENSION_ID); skipping."
+            echo "Chrome Web Store credentials not configured (CWS_REFRESH_TOKEN / CWS_EXTENSION_ID); skipping."
             exit 0
           fi
           ZIP="dist/bitbucket-rich-diffs-chrome-v${GITHUB_REF_NAME#v}.zip"
