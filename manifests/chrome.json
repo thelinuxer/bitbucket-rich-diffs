@@ -3,6 +3,7 @@
   "name": "Bitbucket Rich Diffs",
   "version": "0.0.0",
   "description": "Render Markdown and ODS files in Bitbucket Cloud pull-request diffs as readable, formatted views with diff highlights.",
+  "homepage_url": "https://github.com/thelinuxer/bitbucket-rich-diffs",
   "minimum_chrome_version": "108",
   "host_permissions": [
     "*://bitbucket.org/*",
