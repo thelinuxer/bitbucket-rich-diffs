@@ -324,43 +324,13 @@
    Atlassian's compound data-theme ("dark:dark light:light ...") means both
    palettes are loaded; the active one is decided by data-color-mode on <html>.
    So data-theme is not a usable signal — only data-color-mode (when present)
-   and prefers-color-scheme (as fallback) are. */
-:root[data-color-mode="dark"],
-html[data-color-mode="dark"] {
-  --bmd-bg: #1d2125;
-  --bmd-bg-subtle: #22272b;
-  --bmd-bg-hover: #2c333a;
-  --bmd-border: #2c333a;
-  --bmd-border-strong: #454c55;
-  --bmd-text: #c7d1db;
-  --bmd-text-subtle: #b6c2cf;
-  --bmd-text-muted: #9fadbc;
-  --bmd-text-faint: #8c9bab;
-  --bmd-accent: #579dff;
-  --bmd-accent-on: #1d2125;
-  --bmd-accent-strong: #85b8ff;
-  --bmd-accent-soft-bg: #09326c;
-  --bmd-added-bg: #1c3329;
-  --bmd-added-fg: #7ee2b8;
-  --bmd-added-border: #4bce97;
-  --bmd-removed-bg: #42221f;
-  --bmd-removed-fg: #f87168;
-  --bmd-removed-border: #f87168;
-  --bmd-removed-strike: rgba(248, 113, 104, 0.55);
-  --bmd-changed-bg: #3d2e00;
-  --bmd-changed-fg: #f5cd47;
-  --bmd-changed-border: #7f5f01;
-  --bmd-style-outline: #388bff;
-  --bmd-error-fg: #f87168;
-  --bmd-error-bg: #42221f;
-  --bmd-tag-added-bg: rgba(75, 206, 151, 0.22);
-  --bmd-tag-removed-bg: rgba(248, 113, 104, 0.22);
-  --bmd-tag-style-bg: rgba(133, 184, 255, 0.22);
-}
+   and prefers-color-scheme (as fallback) are.
 
-/* OS preference fallback for pages that don't set data-color-mode. Scoped with
-   :not([data-color-mode="light"]) so Bitbucket's explicit "Light" overrides
-   the OS preference. */
+   Two triggers below share an identical palette. CSS can't union a selector
+   with a media-query-scoped selector, so the values are duplicated; KEEP THE
+   TWO BLOCKS IN SYNC. Media-query block is listed first so the explicit
+   data-color-mode="dark" rule wins on source order when both apply. */
+
 @media (prefers-color-scheme: dark) {
   html:not([data-color-mode="light"]) {
     --bmd-bg: #1d2125;
@@ -393,4 +363,36 @@ html[data-color-mode="dark"] {
     --bmd-tag-removed-bg: rgba(248, 113, 104, 0.22);
     --bmd-tag-style-bg: rgba(133, 184, 255, 0.22);
   }
+}
+
+html[data-color-mode="dark"] {
+  --bmd-bg: #1d2125;
+  --bmd-bg-subtle: #22272b;
+  --bmd-bg-hover: #2c333a;
+  --bmd-border: #2c333a;
+  --bmd-border-strong: #454c55;
+  --bmd-text: #c7d1db;
+  --bmd-text-subtle: #b6c2cf;
+  --bmd-text-muted: #9fadbc;
+  --bmd-text-faint: #8c9bab;
+  --bmd-accent: #579dff;
+  --bmd-accent-on: #1d2125;
+  --bmd-accent-strong: #85b8ff;
+  --bmd-accent-soft-bg: #09326c;
+  --bmd-added-bg: #1c3329;
+  --bmd-added-fg: #7ee2b8;
+  --bmd-added-border: #4bce97;
+  --bmd-removed-bg: #42221f;
+  --bmd-removed-fg: #f87168;
+  --bmd-removed-border: #f87168;
+  --bmd-removed-strike: rgba(248, 113, 104, 0.55);
+  --bmd-changed-bg: #3d2e00;
+  --bmd-changed-fg: #f5cd47;
+  --bmd-changed-border: #7f5f01;
+  --bmd-style-outline: #388bff;
+  --bmd-error-fg: #f87168;
+  --bmd-error-bg: #42221f;
+  --bmd-tag-added-bg: rgba(75, 206, 151, 0.22);
+  --bmd-tag-removed-bg: rgba(248, 113, 104, 0.22);
+  --bmd-tag-style-bg: rgba(133, 184, 255, 0.22);
 }
