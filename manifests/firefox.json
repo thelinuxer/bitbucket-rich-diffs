@@ -28,6 +28,7 @@
         "src/renderer.js",
         "src/ods-parser.js",
         "src/ods-renderer.js",
+        "src/nav.js",
         "src/content.js"
       ],
       "css": ["src/styles.css"],

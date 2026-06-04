@@ -8,6 +8,9 @@ web-ext-artifacts/
 node_modules/
 npm-debug.log*
 
+# Local extension test profile
+.chrome-test-profile/
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
