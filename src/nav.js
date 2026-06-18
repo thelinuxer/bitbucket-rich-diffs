@@ -105,8 +105,81 @@ if (typeof module !== "undefined" && module.exports) {
     return out;
   }
 
+  // Fallback when the file-tree sidebar is hidden/absent: enumerate the loaded
+  // diff cards directly (id="chg-<path>"), in DOM order (= PR order). Best-effort
+  // only — lazy-unloaded cards are not in the DOM, so far-down files this path
+  // cannot reach. The tree path remains primary when available.
+  function listFromCards() {
+    const seen = new Set();
+    const out = [];
+    for (const el of document.querySelectorAll('[id^="chg-"]')) {
+      const raw = el.id.slice(4); // strip "chg-"
+      if (!raw || seen.has(raw)) continue;
+      seen.add(raw);
+      out.push({ raw, anchor: null });
+    }
+    return out;
+  }
+
+  // The PR "file view" tree can be collapsed via Bitbucket's "Toggle file view"
+  // control, which UNMOUNTS the tree (anchors disappear from the DOM) rather than
+  // just hiding it. Find that toggle so we can momentarily re-open the tree to
+  // read the authoritative full file list even when the reviewer keeps it hidden.
+  function findFileTreeToggle() {
+    for (const b of document.querySelectorAll('button,[role="button"]')) {
+      const label = (b.getAttribute("aria-label") || b.textContent || "").trim();
+      if (/toggle file view/i.test(label)) return b;
+    }
+    return null;
+  }
+
+  // Poll until the tree anchors appear (the tree mounts asynchronously after the
+  // toggle is clicked) or the timeout elapses.
+  function waitForTree(timeoutMs) {
+    return new Promise((resolve) => {
+      const t0 = Date.now();
+      const tick = () => {
+        const list = listFromTree();
+        if (list.length || Date.now() - t0 > timeoutMs) return resolve(list);
+        setTimeout(tick, 50);
+      };
+      tick();
+    });
+  }
+
+  // Authoritative ordered file list. Prefer the tree anchors (complete list, even
+  // for lazy-unloaded files). If the tree is collapsed/unmounted, momentarily
+  // re-open it to read the full list, then restore the collapsed state. Returns
+  // { list, restore } where restore() re-collapses the tree if we expanded it.
+  async function acquireFileList() {
+    let list = listFromTree();
+    if (list.length) return { list, restore: null };
+
+    const toggle = findFileTreeToggle();
+    if (toggle) {
+      toggle.click(); // expand the tree
+      list = await waitForTree(1500);
+      if (list.length) {
+        // Re-collapse only after navigation has been dispatched, so the reviewer's
+        // hidden-tree layout is preserved.
+        const restore = () => {
+          const t = findFileTreeToggle();
+          if (t) t.click();
+        };
+        return { list, restore };
+      }
+      // Expansion failed to surface anchors — undo our toggle to avoid leaving the
+      // tree in an unexpected state.
+      const t = findFileTreeToggle();
+      if (t) t.click();
+    }
+
+    // Last resort: enumerate loaded cards (incomplete on large lazy-loaded PRs).
+    return { list: listFromCards(), restore: null };
+  }
+
   function navigate(file) {
-    file.anchor.click(); // Bitbucket loads + scrolls to the file
+    if (file.anchor) file.anchor.click(); // Bitbucket loads + scrolls to the file
     const target = findTarget(file.raw);
     if (target && target.scrollIntoView) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -128,29 +201,34 @@ if (typeof module !== "undefined" && module.exports) {
     return false;
   }
 
-  function onNavClick() {
+  async function onNavClick() {
     if (allFilesViewedPerHeader()) {
       showToast("All files are viewed");
       return;
     }
-    const list = listFromTree();
-    if (!list.length) {
-      log("no file-tree anchors found");
-      return;
+    const { list, restore } = await acquireFileList();
+    try {
+      if (!list.length) {
+        log("no files found (tree unavailable and no diff cards loaded)");
+        return;
+      }
+      const arr = list.map((f) => {
+        const t = findTarget(f.raw);
+        return {
+          viewed: isPathViewed(f.raw),
+          top: t ? t.getBoundingClientRect().top : null,
+        };
+      });
+      const idx = chooseNext(arr, 1);
+      if (idx === null) {
+        showToast("All files are viewed");
+        return;
+      }
+      navigate(list[idx]);
+    } finally {
+      // Restore the reviewer's collapsed tree after navigation is dispatched.
+      if (restore) setTimeout(restore, 400);
     }
-    const arr = list.map((f) => {
-      const t = findTarget(f.raw);
-      return {
-        viewed: isPathViewed(f.raw),
-        top: t ? t.getBoundingClientRect().top : null,
-      };
-    });
-    const idx = chooseNext(arr, 1);
-    if (idx === null) {
-      showToast("All files are viewed");
-      return;
-    }
-    navigate(list[idx]);
   }
 
   // --- Lifecycle ------------------------------------------------------------
