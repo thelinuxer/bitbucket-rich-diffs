@@ -18,10 +18,10 @@ Bitbucket Rich Diffs
 ## Summary (max 132 chars)
 
 ```
-Render Markdown files in Bitbucket Cloud pull-request diffs as proper formatted documents — unified or side-by-side.
+Render Markdown and ODS files in Bitbucket Cloud pull-request diffs as proper formatted documents — unified or side-by-side.
 ```
 
-(118 chars.)
+(123 chars.)
 
 ---
 
@@ -30,7 +30,7 @@ Render Markdown files in Bitbucket Cloud pull-request diffs as proper formatted 
 ```
 Reviewing a documentation PR on Bitbucket Cloud is the same experience as reviewing code: a wall of plus and minus signs, line numbers, and raw Markdown syntax. Headings look like "## What it does." Tables look like "| col | col |". Bold text shows as **double-asterisks**. Reading prose this way is slow and easy to skim past.
 
-Bitbucket Rich Diffs adds a small per-file toolbar above every Markdown file in your pull request diffs. One click toggles between three views, and you can mix and match per file:
+Bitbucket Rich Diffs adds a small per-file toolbar above every Markdown and ODS file in your pull request diffs. One click toggles between three views, and you can mix and match per file:
 
 ORIGINAL DIFF — Bitbucket's default plus / minus view, untouched.
 
@@ -38,11 +38,13 @@ RENDERED (UNIFIED) — the file rendered as Markdown, in document order, with ad
 
 RENDERED (SIDE-BY-SIDE) — two columns: Before on the left, After on the right, both fully rendered. Best for visualizing structural changes like added sections or restructured tables.
 
+ODS spreadsheets get the same treatment: each sheet is rendered as a table instead of a raw +/- diff.
+
 WHY YOU MIGHT WANT IT
-Reviewing READMEs, RFCs, design docs, ADRs, runbooks, or any prose under version control. Anyone whose Bitbucket PRs include a Markdown file regularly will save time.
+Reviewing READMEs, RFCs, design docs, ADRs, runbooks, spreadsheets, or any document under version control. Anyone whose Bitbucket PRs include a Markdown or ODS file regularly will save time.
 
 HOW IT WORKS
-The extension uses the Bitbucket session you're already signed in with — no separate authentication, no app password, no tokens. Before/after file content is fetched the same way Bitbucket's own UI fetches source files, and rendered locally in your browser using the marked library. Output is sanitized with DOMPurify before display, so a malicious Markdown file in a PR can't run script in the page.
+The extension uses the Bitbucket session you're already signed in with — no separate authentication, no app password, no tokens. Before/after file content is fetched the same way Bitbucket's own UI fetches source files, and rendered locally in your browser — Markdown via the marked library, ODS unzipped with JSZip and parsed into a table. Output is sanitized with DOMPurify before display, so a malicious file in a PR can't run script in the page.
 
 PRIVACY
 Your data does not leave your browser except for the file-content fetches, which go directly to bitbucket.org over the same connection your normal Bitbucket browsing already uses. The extension makes no analytics or telemetry calls. There is no account, no settings sync, no third-party service.
@@ -54,7 +56,7 @@ https://github.com/thelinuxer/bitbucket-rich-diffs
 Released under the MIT license.
 
 WHAT'S COMING
-Markdown is the first file format. CSV, JSON, and ODS are on the wishlist.
+Markdown and ODS are supported today. CSV and JSON are on the wishlist.
 ```
 
 ---
@@ -88,7 +90,7 @@ https://github.com/thelinuxer/bitbucket-rich-diffs/issues
 ## Single purpose description (Privacy practices tab)
 
 ```
-Render Markdown files inside Bitbucket Cloud pull-request diffs as proper formatted documents — either unified with diff highlights, or side-by-side Before/After — so reviewing prose changes doesn't require reading raw +/- lines.
+Render Markdown and ODS files inside Bitbucket Cloud pull-request diffs as proper formatted documents — either unified with diff highlights, or side-by-side Before/After — so reviewing document changes doesn't require reading raw +/- lines.
 ```
 
 ---
@@ -98,7 +100,7 @@ Render Markdown files inside Bitbucket Cloud pull-request diffs as proper format
 Chrome asks even if you don't use any. Paste:
 
 ```
-This extension does NOT load or execute any remote code. All JavaScript is bundled in the extension package: lib/marked.min.js, lib/diff.min.js, lib/purify.min.js, src/background.js, src/content.js, src/renderer.js. The extension does not inject <script> tags into pages, does not use eval() or new Function(), and does not download or run code from external sources at runtime. The only network activity is fetching the user's own pull-request file content from bitbucket.org (same domain the user is already viewing) for local rendering.
+This extension does NOT load or execute any remote code. All JavaScript is bundled in the extension package: lib/marked.min.js, lib/diff.min.js, lib/purify.min.js, lib/jszip.min.js, src/background.js, src/renderer.js, src/ods-parser.js, src/ods-renderer.js, src/nav.js, src/content.js. The extension does not inject <script> tags into pages, does not use eval() or new Function(), and does not download or run code from external sources at runtime. The only network activity is fetching the user's own pull-request file content from bitbucket.org (same domain the user is already viewing) for local rendering.
 ```
 
 When the form asks "Are you using Remote code?", the answer is **No**.
@@ -129,7 +131,7 @@ CWS asks several specific yes/no questions:
 
 | Question | Answer |
 |---|---|
-| Single purpose | Yes — render Markdown files inside Bitbucket Cloud pull request diffs |
+| Single purpose | Yes — render Markdown and ODS files inside Bitbucket Cloud pull request diffs |
 | Personally identifiable information collected | No |
 | Health information collected | No |
 | Financial / payment info collected | No |
@@ -154,7 +156,8 @@ The full policy text lives in `PRIVACY.md` in this repo. Update both `PRIVACY.md
 
 CWS asks why each manifest permission is needed.
 
-- **storage** — used to remember per-file toolbar preferences across pageloads. (Currently unused but reserved for future settings; can be removed if reviewer pushes back.)
+The manifest requests no `permissions`, only `host_permissions`:
+
 - **host_permissions: bitbucket.org** — content script must run on Bitbucket Cloud pull-request pages and fetch raw file content from the same origin.
 - **host_permissions: api.bitbucket.org** — used to look up the source/destination commit hashes of the pull request being viewed, via the Bitbucket public API.
 

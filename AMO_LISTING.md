@@ -20,10 +20,10 @@ Bitbucket Rich Diffs
 ## Summary (250 chars max)
 
 ```
-Read Bitbucket Cloud PR diffs the way they were meant to be read. Render Markdown files inline as proper formatted documents — unified with diff highlights, or side-by-side Before / After — without leaving the diff page.
+Read Bitbucket Cloud PR diffs the way they were meant to be read. Render Markdown and ODS files inline as proper formatted documents — unified with diff highlights, or side-by-side Before / After — without leaving the diff page.
 ```
 
-(220 chars — leaves a little slack.)
+(229 chars — leaves a little slack.)
 
 ---
 
@@ -32,7 +32,7 @@ Read Bitbucket Cloud PR diffs the way they were meant to be read. Render Markdow
 ```
 Reviewing a documentation PR on Bitbucket Cloud is the same experience as reviewing code: a wall of plus and minus signs, line numbers, and raw Markdown syntax. Headings look like "## What it does." Tables look like "| col | col |". Bold text shows as **double-asterisks**. Reading prose this way is slow and easy to skim past.
 
-Bitbucket Rich Diffs adds a small per-file toolbar above every Markdown file in your pull request diffs. One click toggles between three views, and you can mix and match per file:
+Bitbucket Rich Diffs adds a small per-file toolbar above every Markdown and ODS file in your pull request diffs. One click toggles between three views, and you can mix and match per file:
 
 • ORIGINAL DIFF — Bitbucket's default plus / minus view, untouched.
 
@@ -40,13 +40,15 @@ Bitbucket Rich Diffs adds a small per-file toolbar above every Markdown file in 
 
 • RENDERED (SIDE-BY-SIDE) — two columns: Before on the left, After on the right, both fully rendered. Best for visualizing structural changes, like added sections or restructured tables.
 
+ODS spreadsheets get the same treatment: each sheet is rendered as a table instead of a raw +/- diff.
+
 WHY YOU MIGHT WANT IT
 
-Reviewing READMEs, RFCs, design docs, ADRs, runbooks, or any prose under version control. Anyone whose Bitbucket PRs include a .md file regularly will save time.
+Reviewing READMEs, RFCs, design docs, ADRs, runbooks, spreadsheets, or any document under version control. Anyone whose Bitbucket PRs include a .md or .ods file regularly will save time.
 
 HOW IT WORKS
 
-The extension uses the Bitbucket session you're already signed in with — no separate authentication, no app password, no tokens. The before / after file content is fetched the same way Bitbucket's own UI fetches source files, and rendered locally in your browser using the marked library. Output is sanitized with DOMPurify before display, so a malicious Markdown file in a PR can't run arbitrary script in the page.
+The extension uses the Bitbucket session you're already signed in with — no separate authentication, no app password, no tokens. The before / after file content is fetched the same way Bitbucket's own UI fetches source files, and rendered locally in your browser — Markdown via the marked library, ODS unzipped with JSZip and parsed into a table. Output is sanitized with DOMPurify before display, so a malicious file in a PR can't run arbitrary script in the page.
 
 PRIVACY
 
@@ -61,7 +63,7 @@ Released under the MIT license.
 
 WHAT'S COMING
 
-Markdown is the first file format. CSV, JSON, and ODS are on the wishlist. If there's a file type you wish Bitbucket previewed properly, open an issue.
+Markdown and ODS are supported today. CSV and JSON are on the wishlist. If there's a file type you wish Bitbucket previewed properly, open an issue.
 ```
 
 ---
@@ -115,8 +117,9 @@ The Mozilla review team will ask. Paste this:
 Bitbucket Rich Diffs does not collect, store, transmit, or share any
 personal data. The extension makes HTTP requests only to bitbucket.org
 domains, using your existing browser session, to fetch the raw before
-and after content of Markdown files visible in pull requests you are
-already viewing. No analytics, no telemetry, no third-party services.
+and after content of Markdown and ODS files visible in pull requests
+you are already viewing. No analytics, no telemetry, no third-party
+services.
 
 Source code is available at:
 https://github.com/thelinuxer/bitbucket-rich-diffs

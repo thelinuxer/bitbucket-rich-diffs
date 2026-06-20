@@ -1,8 +1,8 @@
 # Privacy Policy — Bitbucket Rich Diffs
 
-_Last updated: 2026-05-04_
+_Last updated: 2026-06-20_
 
-This is the privacy policy for **Bitbucket Rich Diffs**, a browser extension that renders Markdown files inside Bitbucket Cloud pull-request diffs.
+This is the privacy policy for **Bitbucket Rich Diffs**, a browser extension that renders Markdown and ODS spreadsheet files inside Bitbucket Cloud pull-request diffs.
 
 ## Short version
 
@@ -12,9 +12,9 @@ The extension does not collect, store, transmit, or share any personal data with
 
 When you view a pull-request diff page on `bitbucket.org`, the extension's content script:
 
-1. Detects each Markdown file in the diff and adds a small toolbar with three view modes (Original diff / Rendered (unified) / Rendered (side-by-side)).
+1. Detects each Markdown and ODS file in the diff and adds a small toolbar with three view modes (Original diff / Rendered (unified) / Rendered (side-by-side)).
 2. When you switch to a rendered mode, it asks Bitbucket — using your existing browser session — for the raw "before" and "after" content of that file. The same Bitbucket session your browser already uses for normal Bitbucket browsing is reused; the extension never sees, stores, or transmits any credentials, tokens, or cookies.
-3. Renders the fetched Markdown locally in your browser and inserts the rendered output into the diff card.
+3. Renders the fetched content locally in your browser (Markdown to HTML, or ODS unzipped and parsed into a table) and inserts the rendered output into the diff card.
 
 That's the whole flow. No data is sent to any third party. There is no analytics, no telemetry, no error reporting service, no settings sync, no account, no remote configuration.
 
@@ -35,11 +35,12 @@ The extension communicates only with `bitbucket.org` and `api.bitbucket.org` —
 
 ## Bundled libraries
 
-Three open-source libraries are bundled inside the extension package and run locally in your browser:
+Four open-source libraries are bundled inside the extension package and run locally in your browser:
 
 - [marked](https://github.com/markedjs/marked) — Markdown to HTML rendering
 - [DOMPurify](https://github.com/cure53/DOMPurify) — HTML sanitization (so a malicious Markdown file in a PR cannot inject script into the page)
 - [jsdiff](https://github.com/kpdecker/jsdiff) — line-level diff computation for the unified-rendered view
+- [JSZip](https://github.com/Stuk/jszip) — unzips ODS files locally (ODS is a ZIP container) so their contents can be parsed and rendered as a table
 
 None of these libraries make any network requests of their own. Source code for the extension is available at https://github.com/thelinuxer/bitbucket-rich-diffs.
 
